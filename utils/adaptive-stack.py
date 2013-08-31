@@ -23,7 +23,7 @@ print 'median rms is',np.median(rms)
 i=0
 for filename in sys.argv[1:]:
 
-    if (rms[i]<medrms*2.0 and rms[i]>medrms/3.0):
+    if (rms[i]<medrms*2.0 and rms[i]>medrms/6.0):
         print 'Including',filename
         fitsfile=pyfits.open(filename)
         int=fitsfile[0].data[0,0]
@@ -36,5 +36,7 @@ for filename in sys.argv[1:]:
 s/=w
 #print s
 
+fitsfile=pyfits.open(sys.argv[1])
 fitsfile[0].data[0,0]=s
 fitsfile.writeto('stack.fits',clobber=True)
+fitsfile.close()

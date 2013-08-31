@@ -36,7 +36,7 @@ for station in stations:
                     ls="b-"
                 phases = data.phase
                 timescale = sgain.timescale - sgain.timescale[0]
-                print pol,numpy.mean(phases)
+                print pol,numpy.mean(phases),numpy.min(phases),numpy.max(phases)
                 plt.plot(timescale,phases,ls)
 
 plt.xlabel("Time (s)")
