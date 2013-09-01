@@ -16,13 +16,14 @@ $tsteps=$#steps+1;
 $start=1;
 $end=$tsteps;
 
-if (-d /home/hardcastle) {
+if (-d"/home/hardcastle") {
     $binpath="/home/hardcastle/bin";
     $textpath="/home/hardcastle/text";
 } else {
     $binpath="/home/mjh/lofar/bin";
     $textpath="/home/mjh/lofar/text";
 }
+print "Using $binpath, $textpath\n";
 $caldir="";
 $targdir="";
 $calname="UNSET";
