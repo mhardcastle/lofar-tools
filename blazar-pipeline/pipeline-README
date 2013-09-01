@@ -1,0 +1,90 @@
+pipeline.pl attempts to put together all of the steps needed to
+calibrate and reduce LOFAR monitoring observations.
+
+Its operations are controlled with options on the command line. A
+typical invocation might look like:
+
+pipeline.pl --unpackcal=/staging4/pipeline/Observation128786 --unpacktarget=/staging4/pipeline/Observation128787 --cal=obs5 --target=obs5_t 
+
+The available options are as follows:
+
+--cal             : Specify the directory in which the calibrator
+		    observations are to be found. Must be set and,
+		    unless unpackcal is used, must exist and be
+		    populated with *.dppp files.
+
+--target          : As above, but for target.
+
+--unpackcal       : Specify a path to tar files of the form *.dppp.tar
+		    which should be unpacked into the calibrator
+		    directory. If the calibrator directory exists, it
+		    will be deleted (you will be prompted to confirm).
+
+--unpacktarget    : As above, but for target.
+
+--cleanup         : Clean up from a previous run of the pipeline, e.g. if
+                    you have been forced to interrupt a pipeline run. You
+                    will be prompted to confirm file deletion. This
+                    leaves only the .dppp files which should be
+                    unmodified by previous runs.
+
+--initonly	  : Only do the unpack/cleanup steps.
+
+--start           : Starting step of the pipeline. Defaults to 1.
+
+--end 		  : Final step of the pipeline. Defaults to 10.
+
+--calname	  : The name of the calibrator, if not 3C48.
+
+--verbose         : Turn on slightly more chatter about what the code is
+                    doing.
+
+
+The steps of the pipeline are:
+
+1. Initial flagging of calibrator
+2. Clipping of calibrator
+3. BBS on calibrator
+4. Write out calibrator solutions
+5. Image calibrator
+6. Measure calibrator fluxes
+7. Initial flagging of target
+8. Transfer gains from calibrator
+9. Image target
+10. Measure target fluxes
+
+All steps but 5 and 9 are multi-threaded (many instances of the code
+will run in parallel on different sub-bands, for speed). I haven't
+been able to get multiple instances of CASA to run nicely together, so
+steps involving CASA are sequential.
+
+If the pipeline fails on one of these steps, it is possible to use the
+--start option to re-start at the appropriate point. (However, there
+isn't a great deal of error checking at the moment, so you are
+repsonsible for finding out where it failed.)
+
+The output of steps 6 and 10 is a 'fluxes.txt' file which has the
+following format:
+
+frequency pyse_total_flux pyse_error number_of_PyBDSM_sources
+source1_total_flux source1_error [source2_total_flux source2_error
+...]
+
+So only the pyse flux for the target is listed, while all PyDBSM
+fluxes are given (listed in order of brightness, i.e. the target is
+likely to be the first source). The imaging is 1024x1024 with
+15-arcsec pixels, i.e. 256 arcmin or just over 4 degrees on a side, so
+it's likely that there will be some other sources in the target
+observations. For the calibrator observations, the calibrator should
+be much the brightest, and likely the only source in the field.
+
+The unpackcal and unpacktarget options are provided for convenience --
+you can unpack the tar files into the directories yourself if you
+prefer and the code will run.
+
+A typical pipeline run on our blazar data takes a couple of hours on
+one empty CEP1 node.
+
+All output from the pipeline goes to .out files in the relevant
+working directory. This could include errors! -- so if something goes
+wrong, check the log files.

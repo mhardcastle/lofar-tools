@@ -16,13 +16,6 @@ $tsteps=$#steps+1;
 $start=1;
 $end=$tsteps;
 
-if (-d /home/hardcastle) {
-    $binpath="/home/hardcastle/bin";
-    $textpath="/home/hardcastle/text";
-} else {
-    $binpath="/home/mjh/lofar/bin";
-    $textpath="/home/mjh/lofar/text";
-}
 $caldir="";
 $targdir="";
 $calname="UNSET";
@@ -32,9 +25,6 @@ $initonly=0;
 $unpackcal="";
 $unpacktarget="";
 $timedep=0;
-$cell=15;
-$uvmin="0.15klambda";
-$baseline="\*&";
 
 chomp($wd=`pwd`);
 
@@ -43,9 +33,6 @@ $result = GetOptions ("start=i" => \$start,
 		      "cal=s" => \$caldir,
 		      "target=s" => \$targdir,
 		      "calname=s" => \$calname,
-		      "uvmin=s" => \$uvmin,
-		      "cell=s" => \$cell,
-		      "baseline=s" => \$baseline,
 		      "verbose" => \$verbose,
 		      "cleanup" => \$cleanup,
 		      "timedep" => \$timedep,
@@ -70,7 +57,7 @@ if ($unpackcal) {
     }
     mkdir($caldir);
     print "Unpacking sub-bands: ";
-    chomp(@files=`ls $unpackcal/*.dppp*.tar`);
+    chomp(@files=`ls $unpackcal/*.dppp.tar`);
     chdir($caldir);
     foreach (@files) {
 	system("tar xf $_");
@@ -94,7 +81,7 @@ if ($unpacktarget) {
     }
     mkdir($targdir);
     print "Unpacking sub-bands: ";
-    chomp(@files=`ls $unpacktarget/*.dppp*.tar`);
+    chomp(@files=`ls $unpacktarget/*.dppp.tar`);
     chdir($targdir);
     foreach (@files) {
 	system("tar xf $_");
@@ -126,7 +113,7 @@ if ($cleanup) {
 	printf("No files to clean up in calibrator dir\n");
     }
     chdir($wd."/".$targdir);
-    chomp(@oldfiles=`ls -d * | egrep -v MS.dppp\$ | grep -v sky.model`);
+    chomp(@oldfiles=`ls -d * | egrep -v MS.dppp\$`);
     if ($#oldfiles>=0) {
 	printf "Files to remove from target dir: @oldfiles\n";
 	print color 'bold green';
@@ -202,11 +189,6 @@ for($step=$start; $step<=$end; $step++) {
     unlink($logfile);
     post_fork();
 }
-print "\n";
-print color 'bold blue';
-printf("Pipeline completed.\n");
-print color 'reset';
-
 
 sub do_fork {
     my $id=0;
@@ -244,32 +226,22 @@ sub pre_fork {
 		print "Using calibrator name $calname\n";
 	    }
 	    if ($timedep) {
-		open INFILE, "$textpath/bbs-transfer-timedep.txt";
+		open INFILE, "/home/hardcastle/text/bbs-transfer-timedep.txt";
 	    } else {
-		open INFILE, "$textpath/bbs-transfer.txt";
+		open INFILE, "/home/hardcastle/text/bbs-transfer.txt";
 	    }		
 	    open OUTFILE, ">bbs-transfer.txt";
 	    while (<INFILE>) {
-		s/\*&/$baseline/;
 		s/3C48/$calname/;
 		print OUTFILE $_;
 	    }
 	}
 	when ([6,14]) {
-	    system("rm flux*.txt *.csv *bdsm* stack.fits");
-	    # create the stack and the list of good images
-	    @goodimages=[];
-	    open PIPE,"adaptive-stack.py SB*.fits |";
-	    while (<PIPE>) {
-		if (/Inclu\S+ (\S+)/) {
-		    push(@goodimages,$1);
-		}
-	    }
-	    print "Identified $#goodimages good images from rms\n";
+	    unlink("fluxes.txt");
 	}
 	when (12) {
 	    print "Make GSM file\n";
-	    chomp($s=`$binpath/getpos.py L*SB000*MS.dppp`);
+	    chomp($s=`/home/hardcastle/bin/getpos.py L*SB000*MS.dppp`);
 	    $s=~/(\S+)\s+(\S+)\s+(\S+)/;
 	    $ra=$2;
 	    $dec=$3;
@@ -287,13 +259,13 @@ sub in_fork {
     }
     given($step) {
 	when ([1,7]) { 
-	    system("$binpath/flag_ears.py $file $myid >> $logfile 2>&1");
+	    system("flag_ears.py $file $myid >> $logfile 2>&1");
 	};
 	when ([2,11]) { 
-	    system("$binpath/clip.py $file >> $logfile");
+	    system("clip.py $file >> $logfile");
 	}
 	when (3) {
-	    system("calibrate-stand-alone -f $file bbs-transfer.txt $textpath/sources-calibrate.txt >> $logfile 2>&1");
+	    system("calibrate-stand-alone -f $file bbs-transfer.txt /home/hardcastle/text/sources-calibrate.txt >> $logfile 2>&1");
 	}
 	when (4) {
 	    $_=$file;
@@ -318,7 +290,7 @@ sub in_fork {
 #		eval {
 #		    local $SIG{ALRM} = sub { die "Timeout\n" };
 #		    alarm 120;
-#		    system("casapy --nologger --log2term -c $binpath/clean-pipeline.py ".$file." ".$sb);
+#		    system("casapy --nologger --log2term -c /home/hardcastle/bin/clean-pipeline.py ".$file." ".$sb);
 #		    alarm 0;
 #		};
 #		if ($@) {
@@ -329,9 +301,10 @@ sub in_fork {
 #	    };
 #	}
 	when ([6,14]) {
-	    if ($file ~~ @goodimages) {
-		system("pyse-detimage.pl $file >> $logfile 2>&1"); 
-	    }
+	    $file=~/.*SB(...).*/;
+	    $sb=$1;
+	    system("dobdsm-pipeline.py $sb >> $logfile 2>&1");
+	    system("pysedet.pl $file >> $logfile 2>&1");
 	}
 	when (8) {
 	    system("rficonsole -j 8 -indirect-read $file >> $logfile 2>&1");
@@ -339,7 +312,7 @@ sub in_fork {
 	when (9) {
 	    $file=~/.*SB(...).*/;
 	    chomp($inst=`ls -d $wd/$caldir/*SB$1*.INST`);
-	    $call="calibrate-stand-alone -f --parmdb $inst $file $textpath/bbs.txt $textpath/sources-dummy.txt >> $logfile 2>&1";
+	    $call="calibrate-stand-alone -f --parmdb $inst $file /home/hardcastle/text/bbs.txt /home/hardcastle/text/sources-dummy.txt >> $logfile 2>&1";
 	    system($call);
 	}
 	when (10) {
@@ -354,10 +327,9 @@ sub in_fork {
 	    print FILE "msin=$file\nmsin.missingdata=true\nmsin.orderms=false\nmsin.datacolumn=CORRECTED_DATA\nmsin.baseline=*&\nmsout=vis-SB$sb.copy.ms\nsteps=[]\n";
 	    close FILE;
 	    system("NDPPP NDPPP.parset.$myid >> $logfile 2>&1");
-	    unlink("NDPPP.parset.$myid");
 	}
 	when (12) {
-	    system("calibrate-stand-alone $file $textpath/bbs-phaseonly sky.model >> $logfile 2>&1");
+	    system("calibrate-stand-alone $file /home/hardcastle/text/bbs-phaseonly sky.model >> $logfile 2>&1");
 	}
     }
     
@@ -371,21 +343,75 @@ sub post_fork {
 	}
 	when (5) {
 	    chomp($root=`ls -d *dppp.flag | head`);
-	    $root=~/^(\S+)_SB/;
+	    $root=~/^(\S+)_SA/;
 	    $rootname=$1;
 	    print "Executing casa clean loop with root ",$rootname,"\n";
-	    system("casapy --nologger -c $binpath/clean2.py ".$rootname." 0 203  $cell $uvmin >> $logfile");
-	}
-	when (8) {
-	    system("rm flag*tmp");
+	    system("casapy --nologger -c /home/hardcastle/bin/clean2.py ".$rootname." 0 203 >> $logfile");
 	}
 	when (13) {
 	    print "Executing casa clean loop for target\n";
-	    system("casapy --nologger -c $binpath/clean3.py 0 203 $cell $uvmin >> $logfile");
+	    system("casapy --nologger -c /home/hardcastle/bin/clean3.py 0 203 >> $logfile");
 	}
 	when ([6,14]) { 
-	    system("pyse-detimage.pl stack.fits >> $logfile 2>&1");
-	    system("pyseid.pl stack.csv SB*.csv >> $logfile 2>&1");
+	    open OUTFILE, ">fluxes.txt";
+	    chomp(@files=`ls *.csv`);
+	    foreach $file (@files) {
+		$file=~/(SB...)/;
+		$bdfile=$1.".bdsm.txt";
+		open INFILE, $file;
+		$dummy=<INFILE>;
+		$pflux=0;
+		while (<INFILE>) {
+		    $line=$_;
+		    @bits=split(/, /,$line);
+		    if ($bits[10]>$pflux) {
+			$pflux=$bits[10];
+			$perr=$bits[11];
+		    }
+		}
+		close INFILE;
+		if ($pflux==0) {
+		    print color 'bold red';
+		    print "Warning: PYSE found no sources in $file\n";
+		    print color 'reset';
+		    $perr=0;
+		}
+#		print "bdfile is $bdfile\n";
+		if (!-f $bdfile) { 
+		    print color 'bold red';
+		    print "Warning: BDSM output file $bdfile does not exist\n";
+		    print color 'reset';
+		    next;
+		}
+		open FILE, $bdfile;
+		@fluxes=();
+		@errors=();
+		while (<FILE>) {
+		    chomp;
+		    if ($_ eq "") { next; }
+		    if ($_=~/ (\S+) Hz/) {
+			$freq=$1/1e6;
+			print OUTFILE "$freq $pflux $perr ";
+			next;
+		    }
+		    if (/^#/) {
+			next;
+		    }
+		    @bits=split(/\s+/);
+		    push @fluxes,$bits[9];
+		    push @errors,$bits[10];
+		}
+		@permutation=sort { $fluxes[$b] <=> $fluxes[$a] } (0..$#fluxes);
+		@fluxes=@fluxes[@permutation];
+		@errors=@errors[@permutation];
+		printf OUTFILE "%i ",($#fluxes+1);
+		for($k=0; $k<=$#fluxes; $k++) {
+		    print OUTFILE "$fluxes[$k] $errors[$k] ";
+		}
+		print OUTFILE "\n";
+		close FILE;
+	    }
+	    close OUTFILE;
 	}
     }
 }
