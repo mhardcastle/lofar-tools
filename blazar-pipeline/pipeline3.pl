@@ -36,6 +36,7 @@ $timedep=0;
 $cell=15;
 $uvmin="0.15klambda";
 $baseline="\*&";
+$rename=0;
 
 chomp($wd=`pwd`);
 
@@ -51,6 +52,7 @@ $result = GetOptions ("start=i" => \$start,
 		      "cleanup" => \$cleanup,
 		      "timedep" => \$timedep,
 		      "initonly" => \$initonly,
+		      "rename" => \$rename,
 		      "unpackcal=s" => \$unpackcal,
 		      "unpacktarget=s" => \$unpacktarget
     );
@@ -78,6 +80,14 @@ if ($unpackcal) {
 	print '.';
     }
     print "\n";
+    if ($rename) {
+	foreach (`ls -d *.dppp.MS`) {
+	    chomp;
+	    $file=$_;
+	    s/dppp.MS/MS.dppp/;
+	    system("mv $file $_");
+	}
+    }
     chdir($wd);
 }
 
@@ -102,6 +112,14 @@ if ($unpacktarget) {
 	print '.';
     }
     print "\n";
+    if ($rename) {
+	foreach (`ls -d *.dppp.MS`) {
+	    chomp;
+	    $file=$_;
+	    s/dppp.MS/MS.dppp/;
+	    system("mv $file $_");
+	}
+    }
     chdir($wd);
 }
 
