@@ -11,7 +11,7 @@ fitfunc = lambda p, x: p[0] + p[1] * x
 errfunc = lambda p, x, y, err: (y - fitfunc(p, x)) / err
 powerlaw = lambda x, a, p: a*x**p
 
-maxfile=13
+maxfile=15
 cmap=cm.Set1
 
 times = {}
