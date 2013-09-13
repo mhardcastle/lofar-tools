@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 # Filter a skymap file with reference to a FITS table of positions
+# This version just outputs lines that match a FIRST source
 
 import sys
 from astropy import coordinates as coord
@@ -21,7 +22,7 @@ with open(file) as myfile:
         for line in myfile:
 		bits=line.split(', ')
 #            print bits
-		if ('hires' in bits[0]):
+		if ((len(bits)>0) and (('POINT' in bits[1]) or ('GAUSSIAN' in bits[1]))):
 			bits[3]=bits[3].replace(".","X")
 			bits[3]=bits[3].replace('X',':',2)
 			bits[3]=bits[3].replace('X','.')

@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 # Filter a skymap file with reference to a FITS table of positions
+# This version matches to FIRST sources, amalgamates sources, and
+# converts all sources to points
 
 import sys
 from astropy import coordinates as coord
