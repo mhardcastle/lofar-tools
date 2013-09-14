@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import numpy as np
+import numpy.ma as ma
 import pyfits
 import sys
 
@@ -12,7 +13,8 @@ for filename in sys.argv[1:]:
 
     fitsfile=pyfits.open(filename)
     int=fitsfile[0].data[0,0]
-    rms[i]=int.std()
+    mint=ma.masked_invalid(int)
+    rms[i]=mint.std()
     print 'file',filename,'rms is',rms[i]
     i+=1
     fitsfile.close()
