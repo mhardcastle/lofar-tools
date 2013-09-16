@@ -349,7 +349,7 @@ sub in_fork {
 #	}
 	when ([6,14]) {
 	    if ($file ~~ @goodimages) {
-		system("pyse-detimage.pl $file >> $logfile 2>&1"); 
+		system("$binpath/pyse-detimage.pl $file >> $logfile 2>&1"); 
 	    }
 	}
 	when (8) {
@@ -403,8 +403,8 @@ sub post_fork {
 	    system("casapy --nologger -c $binpath/clean3.py 0 203 $cell $uvmin >> $logfile");
 	}
 	when ([6,14]) { 
-	    system("pyse-detimage.pl stack.fits >> $logfile 2>&1");
-	    system("pyseid.pl stack.csv SB*.csv >> $logfile 2>&1");
+	    system("$binpath/pyse-detimage.pl stack.fits >> $logfile 2>&1");
+	    system("$binpath/pyseid.pl stack.csv SB*.csv >> $logfile 2>&1");
 	}
     }
 }
