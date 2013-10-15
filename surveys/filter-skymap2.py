@@ -34,7 +34,12 @@ with open(file) as myfile:
 			dec=dec.replace(".","X")
 			dec=dec.replace('X',':',2)
 			dec=dec.replace('X','.')
-			c=coord.ICRSCoordinates(bits[2]+' '+dec,unit=(u.hour,u.degree))
+#			print 'using ',bits[2]+' '+dec
+			try:
+				c=coord.ICRSCoordinates(bits[2]+' '+dec,unit=(u.hour,u.degree))
+			except:
+				print "Bah!"
+				next
 			dra=np.cos(3.14159*c.dec.degrees/180)*(hdu.data.field('ra')-c.ra.degrees)
 			ddec=hdu.data.field('dec')-c.dec.degrees
 			dtot=np.sqrt(dra**2+ddec**2)
@@ -78,5 +83,6 @@ for j in range(0,i):
 	if (sources[j].fsn>-1):
 		print j,sources[j].fsn,sources[j].lflux,sources[j].fflux,'FINAL'
 #		outf.write(sources[j].l)
-		outf.write(sources[j].b[0]+', POINT, '+sources[j].b[2]+', '+sources[j].b[3]+(', %g, ' % sources[j].lflux)+'0.0, 0.0, 0.0, 0.0, 0.0, 0.0, '+sources[j].b[11]+', '+sources[j].b[12])
+#		outf.write(sources[j].b[0]+', POINT, '+sources[j].b[2]+', '+sources[j].b[3]+(', %g, ' % sources[j].lflux)+'0.0, 0.0, 0.0, 0.0, 0.0, 0.0, '+sources[j].b[11]+', '+sources[j].b[12])
+		outf.write(sources[j].b[0]+', POINT, '+sources[j].b[2]+', '+sources[j].b[3]+(', %g, ' % sources[j].lflux)+'0.0, 0.0, 0.0\n')
 outf.close()
