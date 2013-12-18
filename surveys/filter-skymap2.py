@@ -14,6 +14,8 @@ class Bunch(object):
 	def __init__(self,**kwds):
 		self.__dict__.update(kwds)
 
+threshold=0.015
+
 # open FITS table
 
 hdulist = fits.open('/home/mjh/first-ngp.fits')
@@ -22,6 +24,7 @@ hdu=hdulist[1]
 print hdu.data.shape
 
 file = sys.argv[1]
+outfile=sys.argv[2]
 i=0;
 sources=[];
 with open(file) as myfile:
@@ -34,7 +37,7 @@ with open(file) as myfile:
 			dec=dec.replace(".","X")
 			dec=dec.replace('X',':',2)
 			dec=dec.replace('X','.')
-#			print 'using ',bits[2]+' '+dec
+			print 'using ',bits[2]+' '+dec
 			try:
 				c=coord.ICRSCoordinates(bits[2]+' '+dec,unit=(u.hour,u.degree))
 			except:
@@ -75,12 +78,12 @@ with open(file) as myfile:
 			sources[i].pr=1
 		i+=1
 
-outf = open('skymodel.out', 'w')
+outf = open(outfile, 'w')
 
 for j in range(0,i):
 	if (sources[j].pr):
 		outf.write(sources[j].l)
-	if (sources[j].fsn>-1):
+	if (sources[j].fsn>-1 and sources[j].lflux>threshold):
 		print j,sources[j].fsn,sources[j].lflux,sources[j].fflux,'FINAL'
 #		outf.write(sources[j].l)
 #		outf.write(sources[j].b[0]+', POINT, '+sources[j].b[2]+', '+sources[j].b[3]+(', %g, ' % sources[j].lflux)+'0.0, 0.0, 0.0, 0.0, 0.0, 0.0, '+sources[j].b[11]+', '+sources[j].b[12])

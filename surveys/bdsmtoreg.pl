@@ -12,11 +12,11 @@ open(OUTREG,">$outreg") or die("Can't open output file");
 
 print OUTREG "# Region file format: DS9 version 4.1\nglobal color=$color dashlist=8 3 width=1 font=\"helvetica 10 normal roman\" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\nfk5\n";
 
-$dummy=<INFILE>; #discard format line
-$dummy=<INFILE>; #discard format line
-
 while (<INFILE>) {
-
+    chomp;
+    if (/^#/ or $_ eq "") {
+	next;
+    }
     @bits=split(/, /);
     $ra=$bits[2];
     @decbits=split(/\./,$bits[3]);
